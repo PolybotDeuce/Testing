@@ -1,0 +1,13 @@
+# Set the default behavior
+* text=auto
+
+# Native line endings
+*.c text
+*.h text
+
+# CRLF line endings
+*.sln text eol=crlf
+
+# Binary
+*.png binary
+*.jpg binary
