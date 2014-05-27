@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using XInputDotNetPure;
 
 public class PlayerController : MonoBehaviour
 {
@@ -44,7 +45,7 @@ public class PlayerController : MonoBehaviour
             case "wendy":
                 spawn = scoutSpawnPos[numScoutsSpawned].position;
                 newObj = (GameObject)Instantiate(wendyPrefab, spawn, Quaternion.identity);
-                newObj.name = "Player " + playerNum;
+                newObj.name = "Player " + (playerNum + 1);
                 newObj.GetComponent<PlayerMovement>().SetPlayer(playerNum, developerModeOn);
                 tempMov = newObj.GetComponent<PlayerMovement>();
                 playerMovers.Add(tempMov);
@@ -55,7 +56,7 @@ public class PlayerController : MonoBehaviour
                 int rand = Random.Range(0, shadeSpawnPos.Length);
                 spawn = shadeSpawnPos[rand].position;
                 newObj = (GameObject)Instantiate(shadePrefab, spawn, Quaternion.identity);
-                newObj.name = "Player " + playerNum;
+                newObj.name = "Player " + (playerNum + 1);
                 newObj.GetComponent<PlayerMovement>().SetPlayer(playerNum, developerModeOn);
                 tempMov = newObj.GetComponent<PlayerMovement>();
                 playerMovers.Add(tempMov);
@@ -63,55 +64,60 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void DEVTOOLnextPlayer (PlayerMovement currentPlayer)
+    public bool DEVTOOLnextPlayer (PlayerMovement currentPlayer)
     {
-        print("next player request");
+        //print("next player request");
 
         bool switchedPlayer = false;
-        int nextPlayerNum = currentPlayer.GetPlayerNum() + 1;
+		int currentPlayerNum = currentPlayer.GetPlayerNum();
+        int nextPlayerNum = currentPlayerNum + 1;
 
-        do
+		while (!switchedPlayer && nextPlayerNum != currentPlayerNum)
         {
-            if (nextPlayerNum > playerMovers.Count)
-                nextPlayerNum = 1;
+            if (nextPlayerNum == playerMovers.Count)
+                nextPlayerNum = 0;
 
-            if (!playerMovers[nextPlayerNum - 1].isControllerConnected())
-            {
-                int temp = playerMovers[nextPlayerNum - 1].GetPlayerNum();
-                playerMovers[nextPlayerNum - 1].SetPlayer(currentPlayer.GetPlayerNum(), developerModeOn);
-                currentPlayer.SetPlayer(temp, developerModeOn);
-                switchedPlayer = true;
-                break;
-            }
+			switchedPlayer = DEVTOOLswapPlayer(currentPlayer, playerMovers[nextPlayerNum]);
 
             nextPlayerNum++;
         }
-        while (!switchedPlayer);
+
+		return switchedPlayer;
     }
 
-    public void DEVTOOLprevPlayer(PlayerMovement currentPlayer)
+    public bool DEVTOOLprevPlayer(PlayerMovement currentPlayer)
     {
-        print("prev player request");
+        //print("prev player request");
 
         bool switchedPlayer = false;
-        int prevPlayerNum = currentPlayer.GetPlayerNum() - 1;
+		int currentPlayerNum = currentPlayer.GetPlayerNum();
+        int prevPlayerNum = currentPlayerNum - 1;
 
-        do
+		while (!switchedPlayer && prevPlayerNum != currentPlayerNum)
         {
-            if (prevPlayerNum < 1)
-                prevPlayerNum = playerMovers.Count;
+            if (prevPlayerNum < 0)
+                prevPlayerNum = playerMovers.Count - 1;
 
-            if (!playerMovers[prevPlayerNum - 1].isControllerConnected())
-            {
-                int temp = playerMovers[prevPlayerNum - 1].GetPlayerNum();
-                playerMovers[prevPlayerNum - 1].SetPlayer(currentPlayer.GetPlayerNum(), developerModeOn);
-                currentPlayer.SetPlayer(temp, developerModeOn);
-                switchedPlayer = true;
-                break;
-            }
+			switchedPlayer = DEVTOOLswapPlayer(currentPlayer, playerMovers[prevPlayerNum]);
 
             prevPlayerNum--;
         }
-        while (!switchedPlayer);
+
+		return switchedPlayer;
     }
+
+	private bool DEVTOOLswapPlayer(PlayerMovement currentPlayer, PlayerMovement otherPlayer)
+	{
+		if (!otherPlayer.isControllerConnected() && !otherPlayer.getIsActive())
+		{
+			PlayerIndex temp = otherPlayer.getPlayerIndex();
+			otherPlayer.setPlayerIndex(currentPlayer.getPlayerIndex());
+			otherPlayer.setIsActive(true);
+			currentPlayer.setPlayerIndex(temp);
+			currentPlayer.setIsActive(false);
+			GameController.Instance.DEVTOOLsetSwap();
+			return true;
+		}
+		return false;
+	}
 }
